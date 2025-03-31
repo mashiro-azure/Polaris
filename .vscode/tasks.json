@@ -1,0 +1,47 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "CMake clean and rebuild",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "command": "make clean && cmake --fresh .. && make",
+            "group": "build"
+        },
+        {
+            "label": "CMake build",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "command": "make",
+            // "group": "build"
+        },
+        {
+            "label": "Separate Debug Symbol",
+            "command": "arm-none-eabi-objcopy --only-keep-debug ${workspaceFolderBasename}.elf ${workspaceFolderBasename}.debug && arm-none-eabi-objcopy --strip-debug ${workspaceFolderBasename}.elf",
+            "type": "shell",
+            "dependsOn": "CMake build",
+            "args": [],
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "presentation": {
+                "reveal": "always"
+            },
+            // "group": "build"
+        },
+        {
+            "label": "Flash to Device",
+            "type": "shell",
+            "dependsOn": "Separate Debug Symbol",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "command": "st-flash write ${workspaceFolderBasename}.elf 0x08000000",
+            "group": "build",
+        },
+    ]
+}
