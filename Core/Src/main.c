@@ -101,8 +101,8 @@ int main(void) {
   MX_USART1_UART_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-  uint8_t status =
-      lora_init(&lora, &hspi1, LORA_NSS_GPIO_Port, LORA_NSS_Pin, 868000000);
+  uint8_t status = lora_init(&lora, &hspi1, LORA_NSS_GPIO_Port, LORA_NSS_Pin,
+                             923LLU * 1000000LLU);
   if (status == LORA_OK) {
     char *msg = "LoRa init OK\r\n";
     HAL_UART_Transmit(&huart1, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
@@ -112,7 +112,7 @@ int main(void) {
   }
 
   char test_msg[] = "Hello from STM32 via LoRa!";
-  lora_mode_standby(&lora); // Required before sending
+  // lora_mode_standby(&lora); // Required before sending
   // lora_send_packet_blocking(&lora, (uint8_t *)test_msg, strlen(test_msg),
   // 1000);
 
@@ -149,7 +149,7 @@ int main(void) {
         }
       }
     }
-    HAL_Delay(2000);
+    // HAL_Delay(2000);
     // lora_send_packet(&lora, (uint8_t *)test_msg, strlen(test_msg));
   }
   /* USER CODE END 3 */
@@ -172,7 +172,7 @@ void SystemClock_Config(void) {
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
     Error_Handler();
   }
@@ -183,10 +183,10 @@ void SystemClock_Config(void) {
                                 RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK) {
     Error_Handler();
   }
 
