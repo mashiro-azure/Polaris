@@ -2,22 +2,43 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "CMake Clean",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "command": "make clean",
+        },
+        {
+            "label": "CMake Configure",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "command": "cmake --fresh ..",
+        },
+        {
+            "label": "CMake Build",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "command": "make -j8",
+            "group": "build"
+        },
+        {
             "label": "CMake clean and rebuild",
             "type": "shell",
             "options": {
                 "cwd": "${workspaceFolder}/build"
             },
-            "command": "make clean && cmake --fresh .. && make",
+            "dependsOn": [
+                "CMake Clean",
+                "CMake Configure",
+                "CMake Build",
+            ],
+            "dependsOrder": "sequence",
             "group": "build"
-        },
-        {
-            "label": "CMake build",
-            "type": "shell",
-            "options": {
-                "cwd": "${workspaceFolder}/build"
-            },
-            "command": "make",
-            // "group": "build"
         },
         {
             "label": "Separate Debug Symbol",

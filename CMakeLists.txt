@@ -12,6 +12,10 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 
+# supress u8g2 overlength-strings in u8g2_fonts.c
+#add_compile_options(-Wno-string-literal-length)
+set_source_files_properties(Drivers/u8g2/u8g2_fonts.c PROPERTIES COMPILE_FLAGS "-Wno-overlength-strings")
+
 
 # Define the build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -45,14 +49,17 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
 )
 
+file(GLOB U8G2_SOURCES Drivers/u8g2/*.c)
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
+    ${U8G2_SOURCES}
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+    Drivers/u8g2/
 )
 
 # Add project symbols (macros)
