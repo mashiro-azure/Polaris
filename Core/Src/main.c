@@ -99,8 +99,8 @@ int main(void) {
   MX_I2C1_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  double magValue[3];
-  double angle;
+  float magValue[3];
+  float angle;
   LIS3MDL_Init(&mag, &hi2c1, LIS3MDL_Device_0, LIS3MDL_Scale_4G,
                LIS3MDL_MODE_MEDIUM, LIS3MDL_ODR_7);
   char data[64];
@@ -113,12 +113,12 @@ int main(void) {
 
     /* USER CODE BEGIN 3 */
     LIS3MDL_ReadMag(&mag, &hi2c1);
-    magValue[0] = mag.mag_raw[0];
-    magValue[1] = mag.mag_raw[1];
-    magValue[2] = mag.mag_raw[2];
+    magValue[0] = mag.mag[0];
+    magValue[1] = mag.mag[1];
+    magValue[2] = mag.mag[2];
 
     // Calculate heading in radians from raw values (do not use fabsf)
-    angle = atan2(magValue[1], magValue[0]);
+    angle = atan2f(magValue[1], magValue[0]);
 
     // Convert the angle from radians to degrees
     angle = angle * (180.0f / M_PI);
