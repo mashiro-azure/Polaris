@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "screens.h"
+#include "stm32f1xx_hal.h"
 #include "stm32f1xx_hal_gpio.h"
 #include "u8g2.h"
 #include "u8x8.h"
@@ -35,6 +36,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define DEBOUNCE_DELAY 10 // in ms, defined by omron
+#define SCREEN_TIMEOUT_MS 10000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -46,9 +48,16 @@
 I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
-static uint32_t lastTick = 0;
+static uint32_t lastDebounceTick = 0;
+// lastDebounceTick: this is used for button debounce check in interrupt
 uint16_t oledAddress = 0x3C << 1;
 ScreenState currentScreen;
+static uint8_t powersave = 0;
+// powersave: this is a control boolean in main to check whether the screen is
+// in powerSave mode set by u8g2.
+static uint32_t lastActionTick = 0;
+// lastActionTick: this is used to check when the button is last pressed.
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -98,6 +107,31 @@ uint8_t u8x8_byte_i2c(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int,
   }
   return 1;
 }
+
+void screen_idle_check(u8g2_t oled) {
+  uint32_t tickNow = HAL_GetTick();
+  if (tickNow - lastActionTick > SCREEN_TIMEOUT_MS) {
+    if (powersave == 0) {
+      u8g2_SetPowerSave(&oled, 1);
+      powersave = 1;
+    }
+  } else {
+    if (powersave == 1) {
+      u8g2_SetPowerSave(&oled, 0);
+      powersave = 0;
+    }
+  }
+}
+
+void screen_update_idle_tick(void)
+
+{
+  // This function set the lastActionTick, so that when interrupt fires, it
+  // can wake the screen up through screen_idle_check()
+  lastActionTick = HAL_GetTick();
+  // Don't set powersave here, screen_idle_check() will handle that.
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -147,10 +181,13 @@ int main(void) {
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1) {
+    screen_idle_check(oled);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    screen_draw(oled, currentScreen);
+    if (powersave == 0) {
+      screen_draw(oled, currentScreen);
+    }
   }
   /* USER CODE END 3 */
 }
@@ -255,8 +292,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if (GPIO_Pin == GPIO_PIN_12) {
     uint32_t current_tick = HAL_GetTick();
 
-    if (current_tick - lastTick > DEBOUNCE_DELAY) {
-      lastTick = current_tick;
+    if (current_tick - lastDebounceTick > DEBOUNCE_DELAY) {
+      lastDebounceTick = current_tick;
+      screen_update_idle_tick();
+
+      if (powersave == 1) {
+        // this skips the screen switching below, so that it
+        // always shows the main screen when waking up.
+        currentScreen = SCREEN_MAIN;
+        return;
+      }
 
       switch (currentScreen) {
       case SCREEN_MAIN:
