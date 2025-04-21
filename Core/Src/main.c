@@ -21,6 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "screens.h"
+#include "stm32f1xx_hal_gpio.h"
 #include "u8g2.h"
 #include "u8x8.h"
 /* USER CODE END Includes */
@@ -32,7 +34,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define DEBOUNCE_DELAY 10 // in ms, defined by omron
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -44,7 +46,9 @@
 I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
+static uint32_t lastTick = 0;
 uint16_t oledAddress = 0x3C << 1;
+ScreenState currentScreen;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -137,9 +141,6 @@ int main(void) {
 
   u8g2_ClearDisplay(&oled);
   u8g2_SetFont(&oled, u8g2_font_8x13_mf);
-  u8g2_DrawStr(&oled, 0, 15, "string");
-  u8g2_DrawBox(&oled, 60, 20, 30, 10);
-  u8g2_SendBuffer(&oled);
 
   /* USER CODE END 2 */
 
@@ -149,6 +150,7 @@ int main(void) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    screen_draw(oled, currentScreen);
   }
   /* USER CODE END 3 */
 }
@@ -225,20 +227,50 @@ static void MX_I2C1_Init(void) {
  * @retval None
  */
 static void MX_GPIO_Init(void) {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
   /* USER CODE BEGIN MX_GPIO_Init_1 */
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  /*Configure GPIO pin : PB12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+  if (GPIO_Pin == GPIO_PIN_12) {
+    uint32_t current_tick = HAL_GetTick();
 
+    if (current_tick - lastTick > DEBOUNCE_DELAY) {
+      lastTick = current_tick;
+
+      switch (currentScreen) {
+      case SCREEN_MAIN:
+        currentScreen = SCREEN_INFO;
+        break;
+      case SCREEN_INFO:
+        currentScreen = SCREEN_MAIN;
+        break;
+      default:
+        break;
+      }
+    }
+  }
+}
 /* USER CODE END 4 */
 
 /**
@@ -247,7 +279,8 @@ static void MX_GPIO_Init(void) {
  */
 void Error_Handler(void) {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
+  /* User can add his own implementation to report the HAL error return state
+   */
   __disable_irq();
   while (1) {
   }
@@ -265,8 +298,8 @@ void Error_Handler(void) {
 void assert_failed(uint8_t *file, uint32_t line) {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line
-     number, ex: printf("Wrong parameters value: file %s on line %d\r\n", file,
-     line) */
+     number, ex: printf("Wrong parameters value: file %s on line %d\r\n",
+     file, line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
