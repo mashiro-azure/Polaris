@@ -1,6 +1,7 @@
 #include "screens.h"
 #include "icons.h"
 #include "u8g2.h"
+#include <string.h>
 
 void draw_los_box(u8g2_t *oled, u8g2_uint_t originX, u8g2_uint_t originY,
                   u8g2_uint_t lengthX, u8g2_uint_t lengthY) {
@@ -27,12 +28,25 @@ void draw_battery_box(u8g2_t *oled, float batteryPercentage) {
   u8g2_DrawBox(oled, originX, originY, lengthX, lengthY);
 }
 
+void draw_centered_text_1Line(u8g2_t *oled, const char *text,
+                              u8g2_uint_t originXoffset,
+                              u8g2_uint_t originYoffset, u8g2_uint_t areaWidth,
+                              u8g2_uint_t areaHeight) {
+  u8g2_uint_t textWidth = u8g2_GetStrWidth(oled, text);
+
+  // get origin for text
+  u8g2_uint_t originX = originXoffset + ((areaWidth - textWidth) / 2);
+  u8g2_uint_t originY =
+      originYoffset + ((areaHeight / 2) + (u8g2_GetFontAscent(oled) / 2));
+  u8g2_DrawStr(oled, originX, originY, text);
+}
+
 void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors) {
   u8g2_ClearBuffer(oled);
 
   switch (screen) {
   case SCREEN_MAIN:
-    if (sensors.GPSvalid == 1) {
+    if (strcmp(sensors.GPSstatus, "A") == 0) {
       u8g2_DrawXBM(oled, 2, 2, LOCATION_PIN_SOLID_WIDTH,
                    LOCATION_PIN_SOLID_HEIGHT, location_pin_solid_bits);
     }
@@ -43,7 +57,14 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors) {
 
     // the two text in the middle (128 (screen width)- 4 (battery status)-
     // 12 (icons) = 56px for both)
-    
+    if (sensors.GPSaccquired == 0) {
+      // GPS was never accquired, don't trust the date and time
+      draw_los_box(oled, 16, 0, 56, 32);
+      draw_centered_text_1Line(oled, "LOS", 72, 0, 56, 32);
+    }
+
+    draw_battery_box(oled, 1.0);
+
     break;
 
   case SCREEN_INFO:
