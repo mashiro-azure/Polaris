@@ -24,7 +24,10 @@
                 "cwd": "${workspaceFolder}/build"
             },
             "command": "make -j8",
-            "group": "build"
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
         },
         {
             "label": "CMake clean and rebuild",
