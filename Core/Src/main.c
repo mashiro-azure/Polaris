@@ -186,7 +186,7 @@ int main(void) {
 
     /* USER CODE BEGIN 3 */
     if (powersave == 0) {
-      screen_draw(oled, currentScreen);
+      screen_draw(&oled, currentScreen);
     }
   }
   /* USER CODE END 3 */

@@ -26,8 +26,8 @@ void draw_battery_box(u8g2_t *oled, float batteryPercentage) {
   u8g2_DrawBox(oled, originX, originY, lengthX, lengthY);
 }
 
-void screen_draw(u8g2_t oled, ScreenState screen) {
-  u8g2_ClearBuffer(&oled);
+void screen_draw(u8g2_t *oled, ScreenState screen) {
+  u8g2_ClearBuffer(oled);
 
   switch (screen) {
   case SCREEN_MAIN:
@@ -37,12 +37,12 @@ void screen_draw(u8g2_t oled, ScreenState screen) {
     break;
 
   case SCREEN_INFO:
-    u8g2_DrawStr(&oled, 0, 10, "info");
+    u8g2_DrawStr(oled, 0, 10, "info");
     break;
 
   default:
     break;
   }
 
-  u8g2_SendBuffer(&oled);
+  u8g2_SendBuffer(oled);
 }
