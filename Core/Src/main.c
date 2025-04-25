@@ -26,6 +26,8 @@
 #include "stm32f1xx_hal_gpio.h"
 #include "u8g2.h"
 #include "u8x8.h"
+#include <stdlib.h>
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,6 +49,9 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
+UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart2;
+
 /* USER CODE BEGIN PV */
 /**
     Input / Output
@@ -60,7 +65,7 @@ static uint8_t powersave = 0;
 // in powerSave mode set by u8g2.
 static uint32_t lastActionTick = 0;
 // lastActionTick: this is used to check when the button is last pressed.
-SensorState sensorState = {.GPSvalid = 1, .LORA_Txing = 1};
+SensorState sensorState = {.GPSstatus = "A", .LORA_Txing = 1};
 
 /* USER CODE END PV */
 
@@ -68,6 +73,8 @@ SensorState sensorState = {.GPSvalid = 1, .LORA_Txing = 1};
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_USART1_UART_Init(void);
+static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -136,6 +143,63 @@ void screen_update_idle_tick(void)
   // Don't set powersave here, screen_idle_check() will handle that.
 }
 
+void processGPSsentence(const char *gprmcMessage, SensorState *sensorState) {
+  if (strncmp(gprmcMessage, "$GPRMC", 6) == 0) {
+    char *token;
+    char *messageCopy = strdup(gprmcMessage);
+    token = strtok(messageCopy, ",");
+
+    // Time
+    token = strtok(NULL, ",");
+    if (token != NULL) {
+      strncpy(sensorState->time, token, 10);
+      sensorState->time[10] = '\0';
+    }
+
+    // Status
+    token = strtok(NULL, ",");
+    if (token != NULL) {
+      strncpy(sensorState->GPSstatus, token, 1);
+      sensorState->GPSstatus[1] = '\0';
+    }
+
+    // Latitude
+    token = strtok(NULL, ",");
+    if (token != NULL) {
+      strncpy(sensorState->latitude, token, 10);
+      sensorState->latitude[10] = '\0';
+    }
+    token = strtok(NULL, ",");
+    if (token != NULL) {
+      strncat(sensorState->latitude, token, 1);
+    }
+
+    // Longitude
+    token = strtok(NULL, ",");
+    if (token != NULL) {
+      strncpy(sensorState->longitude, token, 11);
+      sensorState->longitude[11] = '\0';
+    }
+    token = strtok(NULL, ",");
+    if (token != NULL) {
+      strncat(sensorState->longitude, token, 1);
+    }
+
+    // Skip speed and course over ground
+    token = strtok(NULL, ",");
+    token = strtok(NULL, ",");
+
+    // Date
+    token = strtok(NULL, ",");
+    if (token != NULL) {
+      strncpy(sensorState->date, token, 7);
+      sensorState->date[7] = '\0';
+    }
+
+    free(messageCopy);
+  }
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -168,6 +232,8 @@ int main(void) {
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_I2C1_Init();
+  MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
   // Display Setup
@@ -180,6 +246,13 @@ int main(void) {
   u8g2_ClearDisplay(&oled);
   u8g2_SetFont(&oled, u8g2_font_8x13_mf);
 
+  // GPS
+  char gpsBuffer[128];
+  uint8_t gpsBufferIndex = 0;
+  uint8_t gpsBufferCapturing = 0;
+  char gpsLastSentence[128];
+  uint8_t tempChar;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -189,6 +262,48 @@ int main(void) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+    /*
+        GPS
+    */
+    // if (HAL_UART_Receive(&huart2, &tempChar, 1, 10) == HAL_OK) {
+    //   if (tempChar == '$') {
+    //     gpsBufferIndex = 0;
+    //     gpsBuffer[gpsBufferIndex++] = tempChar;
+    //     gpsBufferCapturing = 1;
+    //   } else if (gpsBufferCapturing && gpsBufferIndex < sizeof(gpsBuffer) -
+    //   1) {
+    //     gpsBuffer[gpsBufferIndex++] = tempChar;
+
+    //     if (tempChar == '\n') {
+    //       gpsBuffer[gpsBufferIndex] = '\0';
+    //       // Only forward if it's a GPRMC sentence
+    //       if (strncmp(gpsBuffer, "$GPRMC", 6) == 0) {
+    //         HAL_UART_Transmit(&huart1, (uint8_t *)gpsBuffer, gpsBufferIndex,
+    //                           HAL_MAX_DELAY);
+    //         strncpy(gpsLastSentence, gpsBuffer,
+    //                 sizeof(gpsBuffer)); // copy to gpsLastSetence for further
+    //                                     // processing
+    //         gpsLastSentence[sizeof(gpsLastSentence) - 1] = '\0';
+    //         processGPSsentence(gpsLastSentence, time, status, latitude,
+    //                            longitude, date);
+    //       }
+    //       gpsBufferIndex = 0;
+    //       gpsBufferCapturing = 0;
+    //     }
+    //   }
+    // }
+
+    //
+    // test:
+    strcpy(gpsLastSentence, "$GPRMC,091626.000,A,2236.2791,N,12017.2818,E,0.32,"
+                            "172.25,160418,,,A*62");
+    processGPSsentence(gpsLastSentence, &sensorState);
+    //
+
+    /*
+        Screen Refresh
+    */
     if (powersave == 0) {
       screen_draw(&oled, currentScreen, sensorState);
     }
@@ -263,6 +378,66 @@ static void MX_I2C1_Init(void) {
 }
 
 /**
+ * @brief USART1 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_USART1_UART_Init(void) {
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 9600;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK) {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+}
+
+/**
+ * @brief USART2 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_USART2_UART_Init(void) {
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 9600;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK) {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
+}
+
+/**
  * @brief GPIO Initialization Function
  * @param None
  * @retval None
@@ -274,8 +449,8 @@ static void MX_GPIO_Init(void) {
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin : PB12 */
   GPIO_InitStruct.Pin = GPIO_PIN_12;

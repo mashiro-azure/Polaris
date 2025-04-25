@@ -4,7 +4,12 @@
 #include <u8g2.h>
 
 typedef struct {
-  unsigned char GPSvalid;
+  char time[11];
+  char GPSstatus[2];
+  char latitude[12];
+  char longitude[12];
+  char date[8];
+  unsigned char GPSaccquired; // this checks for the first successful gps fix
   unsigned char LORA_Txing;
 } SensorState;
 
