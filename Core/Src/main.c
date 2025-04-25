@@ -48,6 +48,9 @@
 I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
+/**
+    Input / Output
+*/
 static uint32_t lastDebounceTick = 0;
 // lastDebounceTick: this is used for button debounce check in interrupt
 uint16_t oledAddress = 0x3C << 1;
