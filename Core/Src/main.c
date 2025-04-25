@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "LIS3MDL.h"
+#include "lis3mdl_reg.h"
 #include "stm32f1xx_hal.h"
 #include <math.h>
 #include <stdio.h>
@@ -50,7 +50,6 @@ I2C_HandleTypeDef hi2c1;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
-LIS3MDL_t mag;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -64,7 +63,24 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
+                              uint16_t len) {
+  if (HAL_I2C_Mem_Write((I2C_HandleTypeDef *)handle, LIS3MDL_I2C_ADD_H, reg,
+                        I2C_MEMADD_SIZE_8BIT, (uint8_t *)bufp, len,
+                        1000) == HAL_OK)
+    return 0;
+  else
+    return -1;
+}
 
+static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
+                             uint16_t len) {
+  if (HAL_I2C_Mem_Read((I2C_HandleTypeDef *)handle, LIS3MDL_I2C_ADD_H, reg,
+                       I2C_MEMADD_SIZE_8BIT, bufp, len, 1000) == HAL_OK)
+    return 0;
+  else
+    return -1;
+}
 /* USER CODE END 0 */
 
 /**
@@ -99,11 +115,30 @@ int main(void) {
   MX_I2C1_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  float magValue[3];
-  float angle;
-  LIS3MDL_Init(&mag, &hi2c1, LIS3MDL_Device_0, LIS3MDL_Scale_4G,
-               LIS3MDL_MODE_MEDIUM, LIS3MDL_ODR_7);
-  char data[64];
+  stmdev_ctx_t dev_ctx;
+  dev_ctx.write_reg = platform_write;
+  dev_ctx.read_reg = platform_read;
+  dev_ctx.handle = &hi2c1;
+
+  uint8_t whoamI;
+  lis3mdl_device_id_get(&dev_ctx, &whoamI);
+  if (whoamI != LIS3MDL_ID) {
+    Error_Handler();
+  }
+
+  lis3mdl_reset_set(&dev_ctx, PROPERTY_ENABLE);
+  uint8_t rst;
+  do {
+    lis3mdl_reset_get(&dev_ctx, &rst);
+  } while (rst);
+
+  lis3mdl_block_data_update_set(&dev_ctx, PROPERTY_ENABLE);
+  lis3mdl_data_rate_set(&dev_ctx, LIS3MDL_LP_10Hz);
+  lis3mdl_full_scale_set(&dev_ctx, LIS3MDL_4_GAUSS);
+  lis3mdl_operating_mode_set(&dev_ctx, LIS3MDL_CONTINUOUS_MODE);
+
+  HAL_UART_Transmit(&huart1, (uint8_t *)"UART Init Done\r\n",
+                    strlen("UART Init Done\r\n"), HAL_MAX_DELAY);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -112,28 +147,37 @@ int main(void) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    LIS3MDL_ReadMag(&mag, &hi2c1);
-    magValue[0] = mag.mag[0];
-    magValue[1] = mag.mag[1];
-    magValue[2] = mag.mag[2];
+    lis3mdl_status_reg_t status;
+    lis3mdl_status_get(&dev_ctx, &status);
+    if (status.zyxda) {
+      int16_t data_raw_magnetic[3];
+      float magnetic_mG[3];
 
-    // Calculate heading in radians from raw values (do not use fabsf)
-    angle = atan2f(magValue[1], magValue[0]);
+      memset(data_raw_magnetic, 0x00, 3 * sizeof(int16_t));
+      lis3mdl_magnetic_raw_get(&dev_ctx, data_raw_magnetic);
 
-    // Convert the angle from radians to degrees
-    angle = angle * (180.0f / M_PI);
+      magnetic_mG[0] =
+          lis3mdl_from_fs4_to_gauss(data_raw_magnetic[0]) * 1000.0f;
+      magnetic_mG[1] =
+          lis3mdl_from_fs4_to_gauss(data_raw_magnetic[1]) * 1000.0f;
+      magnetic_mG[2] =
+          lis3mdl_from_fs4_to_gauss(data_raw_magnetic[2]) * 1000.0f;
 
-    // Adjust to 0-360 degrees if needed
-    if (angle < 0) {
-      angle += 360.0f;
+      float angle = atan2f(magnetic_mG[1], magnetic_mG[0]) * 180.0f / M_PI;
+      angle -= 40.0f;
+
+      if (angle < 0.0f) {
+        angle += 360.0f;
+      }
+
+      char tx_buffer[128];
+      snprintf(tx_buffer, sizeof(tx_buffer),
+               "Mag: X = %.2f, Y = %.2f, Z = %.2f, Angle: %.2f\r\n",
+               magnetic_mG[0] / 1000.0f, magnetic_mG[1] / 1000.0f,
+               magnetic_mG[2] / 1000.0f, angle);
+      HAL_UART_Transmit(&huart1, (uint8_t *)tx_buffer, strlen(tx_buffer),
+                        HAL_MAX_DELAY);
     }
-
-    snprintf(data, sizeof(data),
-             "Mag: X = %.2f, Y = %.2f, Z = %.2f, Angle: %.2f\n", magValue[0],
-             magValue[1], magValue[2], angle);
-
-    // Transmit the string via UART1.
-    HAL_UART_Transmit(&huart1, (uint8_t *)data, strlen(data), HAL_MAX_DELAY);
   }
   /* USER CODE END 3 */
 }
