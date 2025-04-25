@@ -40,6 +40,10 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors) {
       u8g2_DrawXBM(oled, 2, 18, RSS_SOLID_WIDTH, RSS_SOLID_HEIGHT,
                    rss_solid_bits);
     }
+
+    // the two text in the middle (128 (screen width)- 4 (battery status)-
+    // 12 (icons) = 56px for both)
+    
     break;
 
   case SCREEN_INFO:
