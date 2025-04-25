@@ -27,14 +27,19 @@ void draw_battery_box(u8g2_t *oled, float batteryPercentage) {
   u8g2_DrawBox(oled, originX, originY, lengthX, lengthY);
 }
 
-void screen_draw(u8g2_t *oled, ScreenState screen) {
+void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors) {
   u8g2_ClearBuffer(oled);
 
   switch (screen) {
   case SCREEN_MAIN:
-    u8g2_DrawStr(&oled, 0, 10, "main");
-    draw_los_box(&oled, 0, 10, 32, 12);
-    draw_battery_box(&oled, 1.0);
+    if (sensors.GPSvalid == 1) {
+      u8g2_DrawXBM(oled, 2, 2, LOCATION_PIN_SOLID_WIDTH,
+                   LOCATION_PIN_SOLID_HEIGHT, location_pin_solid_bits);
+    }
+    if (sensors.LORA_Txing == 1) {
+      u8g2_DrawXBM(oled, 2, 18, RSS_SOLID_WIDTH, RSS_SOLID_HEIGHT,
+                   rss_solid_bits);
+    }
     break;
 
   case SCREEN_INFO:

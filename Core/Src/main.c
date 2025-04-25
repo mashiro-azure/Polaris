@@ -57,6 +57,7 @@ static uint8_t powersave = 0;
 // in powerSave mode set by u8g2.
 static uint32_t lastActionTick = 0;
 // lastActionTick: this is used to check when the button is last pressed.
+SensorState sensorState = {.GPSvalid = 1, .LORA_Txing = 1};
 
 /* USER CODE END PV */
 
@@ -186,7 +187,7 @@ int main(void) {
 
     /* USER CODE BEGIN 3 */
     if (powersave == 0) {
-      screen_draw(&oled, currentScreen);
+      screen_draw(&oled, currentScreen, sensorState);
     }
   }
   /* USER CODE END 3 */
