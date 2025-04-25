@@ -1,4 +1,5 @@
 #include "screens.h"
+#include "icons.h"
 #include "u8g2.h"
 
 void draw_los_box(u8g2_t *oled, u8g2_uint_t originX, u8g2_uint_t originY,
