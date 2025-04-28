@@ -111,7 +111,7 @@ int main(void) {
     HAL_UART_Transmit(&huart1, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
   }
 
-  char test_msg[] = "Hello from STM32 via LoRa!";
+
   // lora_mode_standby(&lora); // Required before sending
   // lora_send_packet_blocking(&lora, (uint8_t *)test_msg, strlen(test_msg),
   // 1000);
@@ -127,32 +127,39 @@ int main(void) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    uint8_t ch;
-    if (HAL_UART_Receive(&huart2, &ch, 1, 10) == HAL_OK) {
-      if (ch == '$') {
-        i = 0;
-        gpsBuffer[i++] = ch;
-        capturing = 1;
-      } else if (capturing && i < sizeof(gpsBuffer) - 1) {
-        gpsBuffer[i++] = ch;
-
-        if (ch == '\n') {
-          gpsBuffer[i] = '\0';
-          // Only forward if it's a GPRMC sentence
-          if (strncmp(gpsBuffer, "$GPRMC", 6) == 0 ||
-              strncmp(gpsBuffer, "$GPGSV", 6) == 0) {
-            HAL_UART_Transmit(&huart1, (uint8_t *)gpsBuffer, i, HAL_MAX_DELAY);
-          }
-          // HAL_UART_Transmit(&huart1, (uint8_t *)gpsBuffer, i, HAL_MAX_DELAY);
+    while (1) {
+      uint8_t ch;
+      if (HAL_UART_Receive(&huart2, &ch, 1, 10) == HAL_OK) {
+        if (ch == '$') {
           i = 0;
-          capturing = 0;
+          gpsBuffer[i++] = ch;
+          capturing = 1;
+        } else if (capturing && i < sizeof(gpsBuffer) - 1) {
+          gpsBuffer[i++] = ch;
+
+          if (ch == '\n') {
+            gpsBuffer[i] = '\0';
+            // Only forward if it's a GPRMC sentence
+            if (strncmp(gpsBuffer, "$GPRMC", 6) == 0 ||
+                strncmp(gpsBuffer, "$GPGSV", 6) == 0) {
+
+              // 用 UART1 列印 GPS 資料
+              HAL_UART_Transmit(&huart1, (uint8_t *)gpsBuffer, i,
+                                HAL_MAX_DELAY);
+
+              // 用 LoRa 傳送 GPS 資料
+              lora_mode_standby(&lora); // 先切到 Standby 模式
+              lora_send_packet_blocking(&lora, (uint8_t *)gpsBuffer, i,
+                                        1000); // Blocking transmit
+            }
+            i = 0;
+            capturing = 0;
+          }
         }
       }
     }
-    // HAL_Delay(2000);
-    // lora_send_packet(&lora, (uint8_t *)test_msg, strlen(test_msg));
+    /* USER CODE END 3 */
   }
-  /* USER CODE END 3 */
 }
 
 /**
@@ -328,7 +335,8 @@ static void MX_GPIO_Init(void) {
  */
 void Error_Handler(void) {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
+  /* User can add his own implementation to report the HAL error return state
+   */
   __disable_irq();
   while (1) {
   }
@@ -346,8 +354,8 @@ void Error_Handler(void) {
 void assert_failed(uint8_t *file, uint32_t line) {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line
-     number, ex: printf("Wrong parameters value: file %s on line %d\r\n", file,
-     line) */
+     number, ex: printf("Wrong parameters value: file %s on line %d\r\n",
+     file, line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
