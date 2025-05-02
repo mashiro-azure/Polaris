@@ -66,18 +66,39 @@ void draw_centered_text_2Line(u8g2_t *oled, const char *text1,
   u8g2_DrawStr(oled, originX, originY + totalAdjust - descent, text2);
 }
 
-const char *menuItems[MENU_ITEM_COUNT] = {"Item 1", "Item 2", "Item 3"};
+typedef struct {
+  char id[5]; // 4char + \0
+  char coordinates[24];
+} MenuItem;
+MenuItem menuItems[MAX_MENU_ITEMS];
+uint8_t menuItemCount = 0;
 void displayMenu(u8g2_t *oled, uint8_t currentMenuItem) {
   u8g2_ClearDisplay(oled);
   u8g2_SetFont(oled, u8g2_font_8x13_mf);
 
-  for (uint8_t i = 0; i < MENU_ITEM_COUNT; i++) {
+  for (uint8_t i = 0; i < menuItemCount; i++) {
     if (i == currentMenuItem) {
       u8g2_DrawStr(oled, 0, (i + 1) * 13, "> "); // Highlight selected item
     }
-    u8g2_DrawStr(oled, 10, (i + 1) * 13, menuItems[i]);
+    u8g2_DrawStr(oled, 10, (i + 1) * 13, menuItems[i].id);
   }
   u8g2_SendBuffer(oled);
+}
+
+void addMenuItem(const char *id, const char *coordinates) {
+  if (menuItemCount < MAX_MENU_ITEMS) {
+    strncpy(menuItems[menuItemCount].id, id,
+            sizeof(menuItems[menuItemCount].id) - 1);
+    menuItems[menuItemCount].id[sizeof(menuItems[menuItemCount].id) - 1] =
+        '\0'; // Null-terminate
+
+    strncpy(menuItems[menuItemCount].coordinates, coordinates,
+            sizeof(menuItems[menuItemCount].coordinates) - 1);
+    menuItems[menuItemCount]
+        .coordinates[sizeof(menuItems[menuItemCount].coordinates) - 1] =
+        '\0'; // Null-terminate
+    menuItemCount++;
+  }
 }
 
 void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
@@ -142,11 +163,11 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
     break;
 
   case SCREEN_MENU:
-    for (uint8_t i = 0; i < MENU_ITEM_COUNT; i++) {
+    for (uint8_t i = 0; i < menuItemCount; i++) {
       if (i == currentMenuItem) {
         u8g2_DrawStr(oled, 0, (i + 1) * 13, "> "); // Highlight selected item
       }
-      u8g2_DrawStr(oled, 10, (i + 1) * 13, menuItems[i]);
+      u8g2_DrawStr(oled, 10, (i + 1) * 13, menuItems[i].id);
     }
     break;
 

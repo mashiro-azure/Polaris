@@ -21,9 +21,10 @@ typedef enum {
   SCREEN_LAST
 } ScreenState;
 
-#define MENU_ITEM_COUNT 3 // Number of items in the menu
-extern const char *menuItems[MENU_ITEM_COUNT];
+#define MAX_MENU_ITEMS 10
+extern uint8_t menuItemCount;
 
+void addMenuItem(const char *id, const char *coordinates);
 void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
                  uint8_t currentMenuItem);
 void navigateMenu(int direction);

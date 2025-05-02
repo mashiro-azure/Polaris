@@ -217,12 +217,12 @@ void processGPSsentence(const char *gprmcMessage, SensorState *sensorState) {
 void navigateMenu(int direction) {
   if (direction == 1) { // Down
     currentMenuItem++;
-    if (currentMenuItem >= MENU_ITEM_COUNT) {
+    if (currentMenuItem >= menuItemCount) {
       currentMenuItem = 0; // Wrap around
     }
   } else if (direction == -1) { // Up
     if (currentMenuItem == 0) {
-      currentMenuItem = MENU_ITEM_COUNT - 1; // Wrap around
+      currentMenuItem = menuItemCount - 1; // Wrap around
     } else {
       currentMenuItem--;
     }
@@ -281,6 +281,8 @@ int main(void) {
   uint8_t gpsBufferCapturing = 0;
   char gpsLastSentence[128];
   uint8_t tempChar;
+
+  addMenuItem("1a2b", "2236.2791N,12017.2818E");
 
   /* USER CODE END 2 */
 
