@@ -119,7 +119,7 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors) {
     draw_battery_box(oled, 1.0);
     break;
 
-  case SCREEN_INFO:
+  case SCREEN_BROADCAST:
     u8g2_DrawStr(oled, 0, 10, "info");
     break;
 

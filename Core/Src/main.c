@@ -65,7 +65,7 @@ static uint8_t powersave = 0;
 // in powerSave mode set by u8g2.
 static uint32_t lastActionTick = 0;
 // lastActionTick: this is used to check when the button is last pressed.
-SensorState sensorState = {.GPSstatus = "A", .LORA_Txing = 1};
+SensorState sensorState = {.GPSstatus = "A", .LORA_Txing = 0};
 
 /* USER CODE END PV */
 
@@ -494,9 +494,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
         currentScreen = SCREEN_MAIN_TIME;
         break;
       case SCREEN_MAIN_TIME:
-        currentScreen = SCREEN_INFO;
+        currentScreen = SCREEN_BROADCAST;
         break;
-      case SCREEN_INFO:
+      case SCREEN_BROADCAST:
         currentScreen = SCREEN_MAIN_COORD;
         break;
       default:
