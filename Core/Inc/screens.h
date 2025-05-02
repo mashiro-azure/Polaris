@@ -4,7 +4,7 @@
 #include <u8g2.h>
 
 typedef struct {
-  char time[11];
+  char time[12];
   char GPSstatus[2];
   char latitude[12];
   char longitude[12];

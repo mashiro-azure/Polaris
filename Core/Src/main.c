@@ -153,7 +153,8 @@ void processGPSsentence(const char *gprmcMessage, SensorState *sensorState) {
     token = strtok(NULL, ",");
     if (token != NULL) {
       strncpy(sensorState->time, token, 10);
-      sensorState->time[10] = '\0';
+      sensorState->time[10] = 'Z';
+      sensorState->time[11] = '\0';
     }
 
     // Status
@@ -194,6 +195,12 @@ void processGPSsentence(const char *gprmcMessage, SensorState *sensorState) {
     if (token != NULL) {
       strncpy(sensorState->date, token, 7);
       sensorState->date[7] = '\0';
+    }
+
+    // GPS first fix accquired with valid data
+    if (sensorState->GPSaccquired == 0 &&
+        strcmp(sensorState->GPSstatus, "A") == 0) {
+      sensorState->GPSaccquired = 1;
     }
 
     free(messageCopy);
