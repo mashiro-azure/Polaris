@@ -120,7 +120,10 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors) {
     break;
 
   case SCREEN_BROADCAST:
-    u8g2_DrawStr(oled, 0, 10, "info");
+    u8g2_SetFont(oled, u8g2_font_6x13_mf);
+    draw_centered_text_2Line(oled, "Hold to", "Broadcast location", 0, 0, 128,
+                             27);
+    u8g2_SetFont(oled, u8g2_font_8x13_mf);
     break;
 
   default:
