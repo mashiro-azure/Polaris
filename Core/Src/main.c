@@ -494,7 +494,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
         currentScreen = SCREEN_MAIN_TIME;
         break;
       case SCREEN_MAIN_TIME:
-        currentScreen = SCREEN_BROADCAST;
+        currentScreen = SCREEN_MAIN_COORD;
         break;
       case SCREEN_BROADCAST:
         currentScreen = SCREEN_MAIN_COORD;
