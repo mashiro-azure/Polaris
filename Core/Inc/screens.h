@@ -13,7 +13,12 @@ typedef struct {
   unsigned char LORA_Txing;
 } SensorState;
 
-typedef enum { SCREEN_MAIN, SCREEN_INFO, SCREEN_LAST } ScreenState;
+typedef enum {
+  SCREEN_MAIN_COORD,
+  SCREEN_MAIN_TIME,
+  SCREEN_INFO,
+  SCREEN_LAST
+} ScreenState;
 
 void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors);
 

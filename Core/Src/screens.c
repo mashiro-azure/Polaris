@@ -70,7 +70,7 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors) {
   u8g2_ClearBuffer(oled);
 
   switch (screen) {
-  case SCREEN_MAIN:
+  case SCREEN_MAIN_COORD:
     if (strcmp(sensors.GPSstatus, "A") == 0) {
       u8g2_DrawXBM(oled, 2, 2, LOCATION_PIN_SOLID_WIDTH,
                    LOCATION_PIN_SOLID_HEIGHT, location_pin_solid_bits);
@@ -94,7 +94,29 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors) {
     }
 
     draw_battery_box(oled, 1.0);
+    break;
 
+  case SCREEN_MAIN_TIME:
+    if (strcmp(sensors.GPSstatus, "A") == 0) {
+      u8g2_DrawXBM(oled, 2, 2, LOCATION_PIN_SOLID_WIDTH,
+                   LOCATION_PIN_SOLID_HEIGHT, location_pin_solid_bits);
+    }
+    if (sensors.LORA_Txing == 1) {
+      u8g2_DrawXBM(oled, 2, 18, RSS_SOLID_WIDTH, RSS_SOLID_HEIGHT,
+                   rss_solid_bits);
+    }
+
+    // the two text in the middle (128 (screen width)- 4 (battery status)-
+    // 12 (icons) = 56px for both)
+    if (sensors.GPSaccquired == 0) {
+      // GPS was never accquired, don't trust the date and time
+      draw_los_box(oled, 16, 0, 56, 32);
+      draw_centered_text_1Line(oled, "NOTIME", 72, 0, 56, 32);
+    } else {
+      draw_centered_text_2Line(oled, sensors.date, sensors.time, 16, 0, 112,
+                               32);
+    }
+    draw_battery_box(oled, 1.0);
     break;
 
   case SCREEN_INFO:

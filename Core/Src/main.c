@@ -485,16 +485,19 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       if (powersave == 1) {
         // this skips the screen switching below, so that it
         // always shows the main screen when waking up.
-        currentScreen = SCREEN_MAIN;
+        currentScreen = SCREEN_MAIN_COORD;
         return;
       }
 
       switch (currentScreen) {
-      case SCREEN_MAIN:
+      case SCREEN_MAIN_COORD:
+        currentScreen = SCREEN_MAIN_TIME;
+        break;
+      case SCREEN_MAIN_TIME:
         currentScreen = SCREEN_INFO;
         break;
       case SCREEN_INFO:
-        currentScreen = SCREEN_MAIN;
+        currentScreen = SCREEN_MAIN_COORD;
         break;
       default:
         break;
