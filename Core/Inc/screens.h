@@ -16,7 +16,7 @@ typedef struct {
 typedef enum {
   SCREEN_MAIN_COORD,
   SCREEN_MAIN_TIME,
-  SCREEN_INFO,
+  SCREEN_BROADCAST,
   SCREEN_LAST
 } ScreenState;
 
