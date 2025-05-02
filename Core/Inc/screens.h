@@ -18,6 +18,7 @@ typedef enum {
   SCREEN_MAIN_TIME,
   SCREEN_BROADCAST,
   SCREEN_MENU,
+  SCREEN_TRACK,
   SCREEN_LAST
 } ScreenState;
 

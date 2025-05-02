@@ -171,6 +171,13 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
     }
     break;
 
+  case SCREEN_TRACK:
+    for (uint8_t i = 0; i < menuItemCount; i++) {
+      u8g2_DrawStr(oled, 10, (i + 1) * 13, menuItems[i].coordinates);
+    }
+
+    break;
+
   default:
     break;
   }
