@@ -17,9 +17,15 @@ typedef enum {
   SCREEN_MAIN_COORD,
   SCREEN_MAIN_TIME,
   SCREEN_BROADCAST,
+  SCREEN_MENU,
   SCREEN_LAST
 } ScreenState;
 
-void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors);
+#define MENU_ITEM_COUNT 3 // Number of items in the menu
+extern const char *menuItems[MENU_ITEM_COUNT];
+
+void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
+                 uint8_t currentMenuItem);
+void navigateMenu(int direction);
 
 #endif

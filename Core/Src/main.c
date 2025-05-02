@@ -67,6 +67,13 @@ static uint32_t lastActionTick = 0;
 // lastActionTick: this is used to check when the button is last pressed.
 SensorState sensorState = {.GPSstatus = "A", .LORA_Txing = 0};
 
+/*
+  Menus
+*/
+uint8_t paddleSwitchPressed = 0;
+volatile uint8_t currentMenuItem =
+    0; // Index of the currently selected menu item
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -207,6 +214,21 @@ void processGPSsentence(const char *gprmcMessage, SensorState *sensorState) {
   }
 }
 
+void navigateMenu(int direction) {
+  if (direction == 1) { // Down
+    currentMenuItem++;
+    if (currentMenuItem >= MENU_ITEM_COUNT) {
+      currentMenuItem = 0; // Wrap around
+    }
+  } else if (direction == -1) { // Up
+    if (currentMenuItem == 0) {
+      currentMenuItem = MENU_ITEM_COUNT - 1; // Wrap around
+    } else {
+      currentMenuItem--;
+    }
+  }
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -312,7 +334,7 @@ int main(void) {
         Screen Refresh
     */
     if (powersave == 0) {
-      screen_draw(&oled, currentScreen, sensorState);
+      screen_draw(&oled, currentScreen, sensorState, currentMenuItem);
     }
   }
   /* USER CODE END 3 */
@@ -459,8 +481,8 @@ static void MX_GPIO_Init(void) {
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pin : PB12 */
-  GPIO_InitStruct.Pin = GPIO_PIN_12;
+  /*Configure GPIO pins : PB12 PB13 PB14 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -485,7 +507,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       if (powersave == 1) {
         // this skips the screen switching below, so that it
         // always shows the main screen when waking up.
-        currentScreen = SCREEN_BROADCAST;
+        currentScreen = SCREEN_MAIN_COORD;
         return;
       }
 
@@ -494,13 +516,42 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
         currentScreen = SCREEN_MAIN_TIME;
         break;
       case SCREEN_MAIN_TIME:
-        currentScreen = SCREEN_MAIN_COORD;
+        currentScreen = SCREEN_MENU;
         break;
       case SCREEN_BROADCAST:
         currentScreen = SCREEN_MAIN_COORD;
         break;
       default:
         break;
+      }
+    }
+  } else if (GPIO_Pin == GPIO_PIN_13) {
+    uint32_t current_tick = HAL_GetTick();
+
+    if (current_tick - lastDebounceTick > DEBOUNCE_DELAY) {
+      lastDebounceTick = current_tick;
+      if (!paddleSwitchPressed) {
+        paddleSwitchPressed = 1;
+        navigateMenu(1);
+        currentScreen = SCREEN_MENU;
+        screen_update_idle_tick();
+      } else {
+        paddleSwitchPressed = 0;
+      }
+    }
+
+  } else if (GPIO_Pin == GPIO_PIN_14) {
+    uint32_t current_tick = HAL_GetTick();
+
+    if (current_tick - lastDebounceTick > DEBOUNCE_DELAY) {
+      lastDebounceTick = current_tick;
+      if (!paddleSwitchPressed) {
+        paddleSwitchPressed = 1;
+        navigateMenu(-1);
+        currentScreen = SCREEN_MENU;
+        screen_update_idle_tick();
+      } else {
+        paddleSwitchPressed = 0;
       }
     }
   }
