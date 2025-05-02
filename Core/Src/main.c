@@ -513,6 +513,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
         return;
       }
 
+      // handle menu click
+      if (currentScreen == SCREEN_MENU) {
+        currentScreen = SCREEN_TRACK;
+        return;
+      }
+
       switch (currentScreen) {
       case SCREEN_MAIN_COORD:
         currentScreen = SCREEN_MAIN_TIME;
