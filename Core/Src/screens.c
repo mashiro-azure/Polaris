@@ -41,6 +41,31 @@ void draw_centered_text_1Line(u8g2_t *oled, const char *text,
   u8g2_DrawStr(oled, originX, originY, text);
 }
 
+void draw_centered_text_2Line(u8g2_t *oled, const char *text1,
+                              const char *text2, u8g2_uint_t originXoffset,
+                              u8g2_uint_t originYoffset, u8g2_uint_t areaWidth,
+                              u8g2_uint_t areaHeight) {
+  u8g2_uint_t text1Width = u8g2_GetStrWidth(oled, text1);
+  u8g2_uint_t text2Width = u8g2_GetStrWidth(oled, text2);
+
+  u8g2_uint_t maxTextWidth;
+  if (text1Width > text2Width) {
+    maxTextWidth = text1Width;
+  } else {
+    maxTextWidth = text2Width;
+  }
+
+  u8g2_uint_t ascent = u8g2_GetAscent(oled);
+  u8g2_int_t descent = u8g2_GetDescent(oled);
+  u8g2_uint_t totalAdjust = (ascent - descent) * 2;
+
+  u8g2_uint_t originX = originXoffset + ((areaWidth - maxTextWidth) / 2);
+  u8g2_uint_t originY = originYoffset + ((areaHeight - totalAdjust) / 2);
+
+  u8g2_DrawStr(oled, originX, originY + ascent, text1);
+  u8g2_DrawStr(oled, originX, originY + totalAdjust - descent, text2);
+}
+
 void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors) {
   u8g2_ClearBuffer(oled);
 
@@ -61,6 +86,11 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors) {
       // GPS was never accquired, don't trust the date and time
       draw_los_box(oled, 16, 0, 56, 32);
       draw_centered_text_1Line(oled, "LOS", 72, 0, 56, 32);
+    } else {
+      draw_centered_text_2Line(oled, sensors.latitude, sensors.longitude, 16, 0,
+                               112, 32);
+      // draw_centered_text_2Line(oled, sensors.date, sensors.time, 72, 0, 56,
+      // 32);
     }
 
     draw_battery_box(oled, 1.0);
