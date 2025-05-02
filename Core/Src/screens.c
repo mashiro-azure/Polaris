@@ -66,7 +66,22 @@ void draw_centered_text_2Line(u8g2_t *oled, const char *text1,
   u8g2_DrawStr(oled, originX, originY + totalAdjust - descent, text2);
 }
 
-void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors) {
+const char *menuItems[MENU_ITEM_COUNT] = {"Item 1", "Item 2", "Item 3"};
+void displayMenu(u8g2_t *oled, uint8_t currentMenuItem) {
+  u8g2_ClearDisplay(oled);
+  u8g2_SetFont(oled, u8g2_font_8x13_mf);
+
+  for (uint8_t i = 0; i < MENU_ITEM_COUNT; i++) {
+    if (i == currentMenuItem) {
+      u8g2_DrawStr(oled, 0, (i + 1) * 13, "> "); // Highlight selected item
+    }
+    u8g2_DrawStr(oled, 10, (i + 1) * 13, menuItems[i]);
+  }
+  u8g2_SendBuffer(oled);
+}
+
+void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
+                 uint8_t currentMenuItem) {
   u8g2_ClearBuffer(oled);
 
   switch (screen) {
@@ -124,6 +139,15 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors) {
     draw_centered_text_2Line(oled, "Hold to", "Broadcast location", 0, 0, 128,
                              27);
     u8g2_SetFont(oled, u8g2_font_8x13_mf);
+    break;
+
+  case SCREEN_MENU:
+    for (uint8_t i = 0; i < MENU_ITEM_COUNT; i++) {
+      if (i == currentMenuItem) {
+        u8g2_DrawStr(oled, 0, (i + 1) * 13, "> "); // Highlight selected item
+      }
+      u8g2_DrawStr(oled, 10, (i + 1) * 13, menuItems[i]);
+    }
     break;
 
   default:
