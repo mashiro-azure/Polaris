@@ -22,6 +22,7 @@ typedef enum {
   SCREEN_LAST
 } ScreenState;
 
+extern char uuid[5];
 #define MAX_MENU_ITEMS 10
 extern uint8_t menuItemCount;
 

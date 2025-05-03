@@ -163,6 +163,10 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
     break;
 
   case SCREEN_MENU:
+    u8g2_DrawStr(oled,
+                 (u8g2_GetDisplayWidth(oled) - u8g2_GetStrWidth(oled, uuid)),
+                 u8g2_GetFontAscent(oled), uuid);
+
     // Define the vertical center of the display.
     // For a 64-pixel high display, this might be 32.
     uint8_t centerY = u8g2_GetDisplayHeight(oled) / 2;
@@ -186,7 +190,7 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
     break;
 
   case SCREEN_TRACK:
-    u8g2_DrawStr(oled, 10, u8g2_GetFontAscent(oled),
+    u8g2_DrawStr(oled, 0, u8g2_GetFontAscent(oled),
                  menuItems[currentMenuItem].coordinates);
 
     break;

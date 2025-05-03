@@ -53,6 +53,7 @@ file(GLOB U8G2_SOURCES Drivers/u8g2/*.c)
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
+    Core/Src/helper.c
     Core/Src/screens.c
     ${U8G2_SOURCES}
 )
