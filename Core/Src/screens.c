@@ -192,7 +192,6 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
   case SCREEN_TRACK:
     u8g2_DrawStr(oled, 0, u8g2_GetFontAscent(oled),
                  menuItems[currentMenuItem].coordinates);
-
     break;
 
   default:

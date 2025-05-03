@@ -132,6 +132,11 @@ uint8_t u8x8_byte_i2c(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int,
 }
 
 void screen_idle_check(u8g2_t oled) {
+  // SCREEN_TRACK sleep bypass
+  if (currentScreen == SCREEN_TRACK) {
+    return;
+  }
+
   uint32_t tickNow = HAL_GetTick();
   if (tickNow - lastActionTick > SCREEN_TIMEOUT_MS) {
     if (powersave == 0) {
