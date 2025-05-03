@@ -163,18 +163,31 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
     break;
 
   case SCREEN_MENU:
+    // Define the vertical center of the display.
+    // For a 64-pixel high display, this might be 32.
+    uint8_t centerY = u8g2_GetDisplayHeight(oled) / 2;
+    uint8_t itemHeight = 13; // Height for each menu item
+
     for (uint8_t i = 0; i < menuItemCount; i++) {
+      // Calculate position relative to the selected item.
+      // When i equals currentMenuItem, (i - currentMenuItem) is 0 and yPos
+      // equals centerY.
+      int16_t yPos = centerY + (int16_t)(i - currentMenuItem) * itemHeight;
+
+      // Draw the highlight indicator for the selected item.
       if (i == currentMenuItem) {
-        u8g2_DrawStr(oled, 0, (i + 1) * 13, "> "); // Highlight selected item
+        u8g2_DrawStr(oled, 0, yPos, "> "); // Highlight selected item
       }
-      u8g2_DrawStr(oled, 10, (i + 1) * 13, menuItems[i].id);
+
+      // Draw the menu item text.
+      u8g2_DrawStr(oled, 10, yPos, menuItems[i].id);
     }
+    break;
     break;
 
   case SCREEN_TRACK:
-    for (uint8_t i = 0; i < menuItemCount; i++) {
-      u8g2_DrawStr(oled, 10, (i + 1) * 13, menuItems[i].coordinates);
-    }
+    u8g2_DrawStr(oled, 10, u8g2_GetFontAscent(oled),
+                 menuItems[currentMenuItem].coordinates);
 
     break;
 
