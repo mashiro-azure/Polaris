@@ -66,10 +66,6 @@ void draw_centered_text_2Line(u8g2_t *oled, const char *text1,
   u8g2_DrawStr(oled, originX, originY + totalAdjust - descent, text2);
 }
 
-typedef struct {
-  char id[5]; // 4char + \0
-  char coordinates[24];
-} MenuItem;
 MenuItem menuItems[MAX_MENU_ITEMS];
 uint8_t menuItemCount = 0;
 void displayMenu(u8g2_t *oled, uint8_t currentMenuItem) {
@@ -85,7 +81,7 @@ void displayMenu(u8g2_t *oled, uint8_t currentMenuItem) {
   u8g2_SendBuffer(oled);
 }
 
-void addMenuItem(const char *id, const char *coordinates) {
+void addMenuItem(const char *id, const char *coordinates, const char *battery) {
   if (menuItemCount < MAX_MENU_ITEMS) {
     strncpy(menuItems[menuItemCount].id, id,
             sizeof(menuItems[menuItemCount].id) - 1);
@@ -96,6 +92,12 @@ void addMenuItem(const char *id, const char *coordinates) {
             sizeof(menuItems[menuItemCount].coordinates) - 1);
     menuItems[menuItemCount]
         .coordinates[sizeof(menuItems[menuItemCount].coordinates) - 1] =
+        '\0'; // Null-terminate
+
+    strncpy(menuItems[menuItemCount].battery, battery,
+            sizeof(menuItems[menuItemCount].battery) - 1);
+    menuItems[menuItemCount]
+        .battery[sizeof(menuItems[menuItemCount].battery) - 1] =
         '\0'; // Null-terminate
     menuItemCount++;
   }
@@ -190,8 +192,12 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
     break;
 
   case SCREEN_TRACK:
+    u8g2_SetFont(oled, u8g2_font_8x13_mf);
+
     u8g2_DrawStr(oled, 0, u8g2_GetFontAscent(oled),
-                 menuItems[currentMenuItem].coordinates);
+                 menuItems[currentMenuItem].battery);
+
+    u8g2_SetFont(oled, u8g2_font_8x13_mf);
     break;
 
   default:
