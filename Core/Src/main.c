@@ -317,7 +317,6 @@ int main(void) {
   /* USER CODE BEGIN WHILE */
   while (1) {
     uint32_t now = HAL_GetTick();
-
     // If the button is currently held down, check for a long press.
     if (buttonIsHeld) {
       uint32_t holdTime = now - buttonPressStart;
@@ -335,12 +334,10 @@ int main(void) {
           effectiveHold = 3000;
         }
         holdProgressRatio = (double)effectiveHold / 3000.0;
-
-        // Call your function to update/display the progress bar.
-        // For example:
-      } else if (holdTime >= 5000) {
-        // After a full 5-second hold, automatically return to the main
-        // coordinate screen.
+      }
+      // After a full 5-second hold, automatically return to the main
+      // coordinate screen.
+      else if (holdTime >= 5000) {
         currentScreen = SCREEN_MAIN_COORD;
         // Optionally, clear the held flag to avoid re-entering this branch.
         buttonIsHeld = 0;
