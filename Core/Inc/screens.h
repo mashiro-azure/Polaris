@@ -27,11 +27,13 @@ extern char uuid[5];
 extern uint8_t menuItemCount;
 typedef struct {
   char id[5]; // 4char + \0
-  char coordinates[24];
+  char latitude[12];
+  char longitude[12];
   char battery[5];
 } MenuItem;
 
-void addMenuItem(const char *id, const char *coordinates, const char *battery);
+void addMenuItem(const char *id, const char *latitude, const char *longitude,
+                 const char *battery);
 void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
                  uint8_t currentMenuItem);
 void navigateMenu(int direction);

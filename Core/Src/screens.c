@@ -81,17 +81,24 @@ void displayMenu(u8g2_t *oled, uint8_t currentMenuItem) {
   u8g2_SendBuffer(oled);
 }
 
-void addMenuItem(const char *id, const char *coordinates, const char *battery) {
+void addMenuItem(const char *id, const char *latitude, const char *longitude,
+                 const char *battery) {
   if (menuItemCount < MAX_MENU_ITEMS) {
     strncpy(menuItems[menuItemCount].id, id,
             sizeof(menuItems[menuItemCount].id) - 1);
     menuItems[menuItemCount].id[sizeof(menuItems[menuItemCount].id) - 1] =
         '\0'; // Null-terminate
 
-    strncpy(menuItems[menuItemCount].coordinates, coordinates,
-            sizeof(menuItems[menuItemCount].coordinates) - 1);
+    strncpy(menuItems[menuItemCount].latitude, latitude,
+            sizeof(menuItems[menuItemCount].latitude) - 1);
     menuItems[menuItemCount]
-        .coordinates[sizeof(menuItems[menuItemCount].coordinates) - 1] =
+        .latitude[sizeof(menuItems[menuItemCount].latitude) - 1] =
+        '\0'; // Null-terminate
+
+    strncpy(menuItems[menuItemCount].longitude, longitude,
+            sizeof(menuItems[menuItemCount].longitude) - 1);
+    menuItems[menuItemCount]
+        .longitude[sizeof(menuItems[menuItemCount].longitude) - 1] =
         '\0'; // Null-terminate
 
     strncpy(menuItems[menuItemCount].battery, battery,

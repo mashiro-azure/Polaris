@@ -295,9 +295,9 @@ int main(void) {
 
   // Menu
   generate_uuid(uuid, 4, get_adc_based_seed(&hadc3));
-  addMenuItem("1a2b", "2236.2791N,12017.2818E", "100%%");
-  addMenuItem("1a2b", "2236.2791N,12017.2818E", "100%%");
-  addMenuItem("1a2b", "2236.2791N,12017.2818E", "100%%");
+  addMenuItem("1a2b", "2236.2791N", "12017.2818E", "100%%");
+  addMenuItem("1a2b", "2236.2791N", "12017.2818E", "100%%");
+  addMenuItem("1a2b", "2236.2791N", "12017.2818E", "100%%");
 
   /* USER CODE END 2 */
 
