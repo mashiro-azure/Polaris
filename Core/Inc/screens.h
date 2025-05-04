@@ -37,5 +37,7 @@ void addMenuItem(const char *id, const char *latitude, const char *longitude,
 void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
                  uint8_t currentMenuItem);
 void navigateMenu(int direction);
+extern double holdProgressRatio;
+void updateProgressBar(u8g2_t *oled, double ratio);
 
 #endif
