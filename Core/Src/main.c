@@ -78,6 +78,12 @@ uint8_t paddleSwitchPressed = 0;
 volatile uint8_t currentMenuItem =
     0; // Index of the currently selected menu item
 
+/*
+  Track
+*/
+double distance;
+double bearing;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -297,10 +303,9 @@ int main(void) {
 
   // Menu
   generate_uuid(uuid, 4, get_adc_based_seed(&hadc3));
-  addMenuItem("1a2b", "2236.2791N", "12017.2818E", "100%%");
-  addMenuItem("1a2b", "2236.2791N", "12017.2818E", "100%%");
-  addMenuItem("1a2b", "2236.2791N", "12017.2818E", "100%%");
-
+  addMenuItem("1a2b", "22.321542", "113.943357", "100%%");
+  addMenuItem("1a2b", "22.321542", "113.943357", "100%%");
+  addMenuItem("1a2b", "22.321542", "113.943357", "100%%");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -344,7 +349,7 @@ int main(void) {
 
     //
     // test:
-    strcpy(gpsLastSentence, "$GPRMC,091626.000,A,2236.2791,N,12017.2818,E,0.32,"
+    strcpy(gpsLastSentence, "$GPRMC,091626.000,A,2220.2717,N,11416.1467,E,0.32,"
                             "172.25,160418,,,A*62");
     processGPSsentence(gpsLastSentence, &sensorState);
     //
@@ -586,6 +591,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
         return;
       }
 
+      // handle track screen exit
       if (currentScreen == SCREEN_TRACK) {
         currentScreen = SCREEN_MAIN_COORD;
         return;
@@ -596,7 +602,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
         currentScreen = SCREEN_MAIN_TIME;
         break;
       case SCREEN_MAIN_TIME:
-        currentScreen = SCREEN_MENU;
+        currentScreen = SCREEN_MAIN_COORD;
         break;
       case SCREEN_BROADCAST:
         currentScreen = SCREEN_MAIN_COORD;

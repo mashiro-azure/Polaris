@@ -1,3 +1,4 @@
+#include "helper.h"
 #include "math.h"
 #include "screens.h"
 #include "stm32f1xx_hal.h"
@@ -82,10 +83,10 @@ double convert_gps_string_to_double(const char *coord) {
   return value;
 }
 
-void calculate_distance_and_bearing(SensorState sensorState,
-                                    const char *targetLatitude,
-                                    const char *targetLongitude,
-                                    double *distance, double *bearing) {
+DistanceBearing calculate_distance_and_bearing(SensorState sensorState,
+                                               const char *targetLatitude,
+                                               const char *targetLongitude) {
+  DistanceBearing result;
   double selfLat = convert_gps_string_to_double(sensorState.latitude);
   double selfLong = convert_gps_string_to_double(sensorState.longitude);
   double targetLat = convert_gps_string_to_double(targetLatitude);
@@ -99,23 +100,24 @@ void calculate_distance_and_bearing(SensorState sensorState,
 
   // Haversine formula
   double dlat = targetLat_rad - selfLat_rad;
-  double dlong = targetLong_rad = selfLong_rad;
+  double dlong = targetLong_rad - selfLong_rad;
 
   double a =
       sin(dlat / 2) * sin(dlat / 2) +
       cos(selfLat_rad) * cos(targetLat_rad) * sin(dlong / 2) * sin(dlong / 2);
   double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-  *distance = 6371.0 * c; // Earth distance in kilometers
+  result.distance = 6371.0 * c * 1000; // Earth distance in meters
 
   // bearing
   double y = sin(targetLong_rad - selfLong_rad) * cos(targetLat_rad);
   double x = cos(selfLat_rad) * sin(targetLat_rad) -
              sin(selfLat_rad) * cos(targetLat_rad) *
                  cos(targetLong_rad - selfLong_rad);
-  *bearing = atan2(y, x) * 180.0 / M_PI; // Convert to degrees
+  result.bearing = atan2(y, x) * 180.0 / M_PI; // Convert to degrees
 
   // Normalize bearing to 0-360 degrees
-  if (*bearing < 0) {
-    *bearing += 360;
+  if (result.bearing < 0) {
+    result.bearing += 360;
   }
+  return result;
 }
