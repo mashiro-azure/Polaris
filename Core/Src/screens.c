@@ -113,6 +113,25 @@ void addMenuItem(const char *id, const char *latitude, const char *longitude,
   }
 }
 
+void updateProgressBar(u8g2_t *oled, double ratio) {
+  // Example:
+  // Let’s say you want a progress bar 50 pixels wide, starting at position (20,
+  // 40).
+  int barX = 0;
+  int barY = u8g2_GetDisplayHeight(oled) - 5;
+  int barWidth = u8g2_GetDisplayWidth(oled);
+  int barHeight = 4;
+
+  // Draw an empty rectangle for the progress bar.
+  u8g2_DrawFrame(oled, barX, barY, barWidth, barHeight);
+
+  // Compute the filled width.
+  int fillWidth = (int)(barWidth * ratio);
+
+  // Draw a filled rectangle inside the empty frame.
+  u8g2_DrawBox(oled, barX, barY, fillWidth, barHeight);
+}
+
 void draw_heading_arrow(u8g2_t *oled, int center_x, int center_y,
                         double bearing) {
   // Configuration parameters (in pixels)
@@ -216,8 +235,9 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
 
   case SCREEN_BROADCAST:
     u8g2_SetFont(oled, u8g2_font_6x13_mf);
-    draw_centered_text_2Line(oled, "Hold to", "Broadcast location", 0, 0, 128,
+    draw_centered_text_2Line(oled, "Hold to", "broadcast location", 0, 0, 128,
                              27);
+    updateProgressBar(oled, holdProgressRatio);
     u8g2_SetFont(oled, u8g2_font_8x13_mf);
     break;
 

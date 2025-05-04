@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "helper.h"
 #include "screens.h"
+#include "stm32f103xe.h"
 #include "stm32f1xx_hal.h"
 #include "stm32f1xx_hal_gpio.h"
 #include "u8g2.h"
@@ -59,6 +60,10 @@ UART_HandleTypeDef huart2;
 /**
     Input / Output
 */
+volatile uint32_t buttonPressStart = 0;
+volatile uint8_t buttonIsHeld = 0;   // set when button is pressed (held down)
+volatile uint8_t buttonReleased = 0; // flag set when button is released
+double holdProgressRatio;
 static uint32_t lastDebounceTick = 0;
 // lastDebounceTick: this is used for button debounce check in interrupt
 uint16_t oledAddress = 0x3C << 1;
@@ -139,7 +144,7 @@ uint8_t u8x8_byte_i2c(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int,
 
 void screen_idle_check(u8g2_t oled) {
   // SCREEN_TRACK sleep bypass
-  if (currentScreen == SCREEN_TRACK) {
+  if (currentScreen == SCREEN_TRACK || currentScreen == SCREEN_BROADCAST) {
     return;
   }
 
@@ -311,6 +316,83 @@ int main(void) {
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1) {
+    uint32_t now = HAL_GetTick();
+
+    // If the button is currently held down, check for a long press.
+    if (buttonIsHeld) {
+      uint32_t holdTime = now - buttonPressStart;
+      if (holdTime >= 2000 && holdTime < 5000) {
+        // Switch to a "hold screen" if not already there.
+        if (currentScreen != SCREEN_BROADCAST) {
+          currentScreen = SCREEN_BROADCAST;
+        }
+
+        // Compute progress after the 2-second delay:
+        // The progress bar fills from 0% (at 2 sec) to 100% (at 5 sec).
+        // So the effective duration is (holdTime - 2000) capped at 3000 ms.
+        uint32_t effectiveHold = holdTime - 2000;
+        if (effectiveHold > 3000) {
+          effectiveHold = 3000;
+        }
+        holdProgressRatio = (double)effectiveHold / 3000.0;
+
+        // Call your function to update/display the progress bar.
+        // For example:
+      } else if (holdTime >= 5000) {
+        // After a full 5-second hold, automatically return to the main
+        // coordinate screen.
+        currentScreen = SCREEN_MAIN_COORD;
+        // Optionally, clear the held flag to avoid re-entering this branch.
+        buttonIsHeld = 0;
+      }
+    }
+
+    // If the button was just released:
+    if (buttonReleased) {
+      uint32_t pressDuration = now - buttonPressStart;
+      buttonReleased = 0; // Clear the flag
+
+      // If the press duration was shorter than 2 seconds, it is a short press.
+      if (pressDuration < 2000) {
+        screen_update_idle_tick();
+
+        if (powersave == 1) {
+          // this skips the screen switching below, so that it
+          // always shows the main screen when waking up.
+          currentScreen = SCREEN_MAIN_COORD;
+        }
+        // handle menu click
+        else if (currentScreen == SCREEN_MENU) {
+          currentScreen = SCREEN_TRACK;
+        }
+        // handle track screen exit
+        else if (currentScreen == SCREEN_TRACK) {
+          currentScreen = SCREEN_MAIN_COORD;
+        } else {
+          switch (currentScreen) {
+          case SCREEN_MAIN_COORD:
+            currentScreen = SCREEN_MAIN_TIME;
+            break;
+          case SCREEN_MAIN_TIME:
+            currentScreen = SCREEN_MAIN_COORD;
+            break;
+          case SCREEN_BROADCAST:
+            currentScreen = SCREEN_MAIN_COORD;
+            break;
+          default:
+            break;
+          }
+        }
+      }
+      // if release button between 2-5 seconds, should return to
+      // SCREEN_MAIN_COORD
+      else if (pressDuration < 5000) {
+        screen_update_idle_tick(); // prevent screen going to sleep immediately
+                                   // after returning from SCREEN_BROADCAST
+        currentScreen = SCREEN_MAIN_COORD;
+      }
+    }
+
     screen_idle_check(oled);
     /* USER CODE END WHILE */
 
@@ -555,8 +637,14 @@ static void MX_GPIO_Init(void) {
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
-  /*Configure GPIO pins : PB12 PB13 PB14 */
-  GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14;
+  /*Configure GPIO pin : PB12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB13 PB14 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13 | GPIO_PIN_14;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -576,39 +664,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
     if (current_tick - lastDebounceTick > DEBOUNCE_DELAY) {
       lastDebounceTick = current_tick;
-      screen_update_idle_tick();
-
-      if (powersave == 1) {
-        // this skips the screen switching below, so that it
-        // always shows the main screen when waking up.
-        currentScreen = SCREEN_MAIN_COORD;
-        return;
-      }
-
-      // handle menu click
-      if (currentScreen == SCREEN_MENU) {
-        currentScreen = SCREEN_TRACK;
-        return;
-      }
-
-      // handle track screen exit
-      if (currentScreen == SCREEN_TRACK) {
-        currentScreen = SCREEN_MAIN_COORD;
-        return;
-      }
-
-      switch (currentScreen) {
-      case SCREEN_MAIN_COORD:
-        currentScreen = SCREEN_MAIN_TIME;
-        break;
-      case SCREEN_MAIN_TIME:
-        currentScreen = SCREEN_MAIN_COORD;
-        break;
-      case SCREEN_BROADCAST:
-        currentScreen = SCREEN_MAIN_COORD;
-        break;
-      default:
-        break;
+      if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12) == GPIO_PIN_RESET) {
+        // Button pressed (falling edge)
+        buttonPressStart = current_tick;
+        buttonIsHeld = 1;
+      } else {
+        // Button released (rising edge)
+        buttonIsHeld = 0;
+        buttonReleased = 1;
       }
     }
   } else if (GPIO_Pin == GPIO_PIN_13) {
