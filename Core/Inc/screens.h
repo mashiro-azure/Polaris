@@ -25,8 +25,13 @@ typedef enum {
 extern char uuid[5];
 #define MAX_MENU_ITEMS 10
 extern uint8_t menuItemCount;
+typedef struct {
+  char id[5]; // 4char + \0
+  char coordinates[24];
+  char battery[5];
+} MenuItem;
 
-void addMenuItem(const char *id, const char *coordinates);
+void addMenuItem(const char *id, const char *coordinates, const char *battery);
 void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
                  uint8_t currentMenuItem);
 void navigateMenu(int direction);
