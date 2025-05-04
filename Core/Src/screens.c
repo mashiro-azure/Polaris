@@ -266,7 +266,6 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
       u8g2_DrawStr(oled, 10, yPos, menuItems[i].id);
     }
     break;
-    break;
 
   case SCREEN_TRACK:
     MenuItem selectedItem = menuItems[currentMenuItem];
