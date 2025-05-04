@@ -202,6 +202,8 @@ void processGPSsentence(const char *gprmcMessage, SensorState *sensorState) {
     if (token != NULL) {
       strncat(sensorState->longitude, token, 1);
     }
+    convert_rawGPS_to_dd_format(sensorState, sensorState->latitude,
+                                sensorState->longitude);
 
     // Skip speed and course over ground
     token = strtok(NULL, ",");
