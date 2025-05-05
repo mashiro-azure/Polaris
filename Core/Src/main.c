@@ -76,7 +76,7 @@ static uint8_t powersave = 0;
 // in powerSave mode set by u8g2.
 static uint32_t lastActionTick = 0;
 // lastActionTick: this is used to check when the button is last pressed.
-SensorState sensorState = {.GPSstatus = "A", .LORA_Txing = 0};
+SensorState sensorState = {.GPSstatus = "V", .LORA_Txing = 0};
 
 /*
   Menus
@@ -437,41 +437,31 @@ int main(void) {
     /*
         GPS
     */
-    // if (HAL_UART_Receive(&huart2, &tempChar, 1, 10) == HAL_OK) {
-    //   if (tempChar == '$') {
-    //     gpsBufferIndex = 0;
-    //     gpsBuffer[gpsBufferIndex++] = tempChar;
-    //     gpsBufferCapturing = 1;
-    //   } else if (gpsBufferCapturing && gpsBufferIndex < sizeof(gpsBuffer)
-    //   - 1) {
-    //     gpsBuffer[gpsBufferIndex++] = tempChar;
+    if (HAL_UART_Receive(&huart2, &tempChar, 1, 10) == HAL_OK) {
+      if (tempChar == '$') {
+        gpsBufferIndex = 0;
+        gpsBuffer[gpsBufferIndex++] = tempChar;
+        gpsBufferCapturing = 1;
+      } else if (gpsBufferCapturing && gpsBufferIndex < sizeof(gpsBuffer) - 1) {
+        gpsBuffer[gpsBufferIndex++] = tempChar;
 
-    //     if (tempChar == '\n') {
-    //       gpsBuffer[gpsBufferIndex] = '\0';
-    //       // Only forward if it's a GPRMC sentence
-    //       if (strncmp(gpsBuffer, "$GPRMC", 6) == 0) {
-    //         HAL_UART_Transmit(&huart1, (uint8_t *)gpsBuffer,
-    //         gpsBufferIndex,
-    //                           HAL_MAX_DELAY);
-    //         strncpy(gpsLastSentence, gpsBuffer,
-    //                 sizeof(gpsBuffer)); // copy to gpsLastSetence for
-    //                 further
-    //                                     // processing
-    //         gpsLastSentence[sizeof(gpsLastSentence) - 1] = '\0';
-    //         processGPSsentence(gpsLastSentence, time, status, latitude,
-    //                            longitude, date);
-    //       }
-    //       gpsBufferIndex = 0;
-    //       gpsBufferCapturing = 0;
-    //     }
-    //   }
-    // }
-
-    //
-    // test:
-    strcpy(gpsLastSentence, "$GPRMC,091626.000,A,2220.2717,N,11416.1467,E,0.32,"
-                            "172.25,160418,,,A*62");
-    processGPSsentence(gpsLastSentence, &sensorState);
+        if (tempChar == '\n') {
+          gpsBuffer[gpsBufferIndex] = '\0';
+          // Only forward if it's a GPRMC sentence
+          if (strncmp(gpsBuffer, "$GPRMC", 6) == 0) {
+            HAL_UART_Transmit(&huart1, (uint8_t *)gpsBuffer, gpsBufferIndex,
+                              HAL_MAX_DELAY); // DEBUG: GPS buffer
+            strncpy(gpsLastSentence, gpsBuffer,
+                    sizeof(gpsBuffer)); // copy to gpsLastSetence for further
+                                        // processing
+            gpsLastSentence[sizeof(gpsLastSentence) - 1] = '\0';
+            processGPSsentence(gpsLastSentence, &sensorState);
+          }
+          gpsBufferIndex = 0;
+          gpsBufferCapturing = 0;
+        }
+      }
+    }
     //
 
     /*
