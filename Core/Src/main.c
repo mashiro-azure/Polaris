@@ -98,6 +98,7 @@ double bearing;
 volatile uint8_t beepActive = 0; // When 1, the timer ISR toggles the output
 volatile uint32_t lastBeepTime = 0;
 volatile uint32_t beepStartTime = 0;
+volatile uint32_t periodicBeepEnabled = 0;
 
 /* USER CODE END PV */
 
@@ -359,6 +360,7 @@ int main(void) {
         beepActive = 1;
         beepStartTime = now;
         lastBeepTime = now;
+        periodicBeepEnabled = 1;
         HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
       }
     }
@@ -410,13 +412,17 @@ int main(void) {
     }
 
     // Buzzer
-    if (!beepActive && (now - lastBeepTime >= 5000)) {
-      beepActive = 1;
-      beepStartTime = now;
-      lastBeepTime = now;
-      HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+    // PERIODIC BEEP LOGIC (only active after a 5-second hold has enabled it)
+    if (periodicBeepEnabled) {
+      if (!beepActive && (now - lastBeepTime >= 5000)) {
+        beepActive = 1;
+        beepStartTime = now;
+        lastBeepTime = now;
+        HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+      }
     }
-    // If a beep is active, disable it after 0.5 seconds
+
+    // BEEPER STOP LOGIC: Stop a beep after it has sounded for 0.5 seconds.
     if (beepActive && (now - beepStartTime >= 500)) {
       beepActive = 0;
       HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
