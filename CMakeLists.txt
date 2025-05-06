@@ -55,6 +55,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     Core/Src/helper.c
     Core/Src/screens.c
+    Drivers/lis3mdl/lis3mdl_reg.c
     ${U8G2_SOURCES}
 )
 
@@ -62,6 +63,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     Drivers/u8g2/
+    Drivers/lis3mdl/
 )
 
 # Add project symbols (macros)
