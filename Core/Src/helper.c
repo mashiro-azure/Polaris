@@ -269,6 +269,7 @@ void processLoRaPacket(uint8_t *loraRXBuffer, uint8_t packetLength) {
 
   char header[6];
   MenuItem item;
+  unsigned char idExist = 0;
 
   // Parse the contiguous comma-separated string.
   // %5[^,] reads at most 5 characters for 'header',
@@ -279,10 +280,21 @@ void processLoRaPacket(uint8_t *loraRXBuffer, uint8_t packetLength) {
                    item.id, item.latitude, item.longitude, item.battery);
 
   if (ret == 5 && strncmp(header, ">PLRS", 5) == 0) {
-    unsigned char idExist = 0;
     for (int i = 0; i < menuItemCount; i++) {
       if (strcmp(menuItems[i].id, item.id) == 0) {
         idExist = 1;
+        strncpy(menuItems[i].latitude, item.latitude,
+                sizeof(menuItems[i].latitude) - 1);
+        menuItems[i].latitude[sizeof(menuItems[i].latitude) - 1] = '\0';
+
+        strncpy(menuItems[i].longitude, item.longitude,
+                sizeof(menuItems[i].longitude) - 1);
+        menuItems[i].longitude[sizeof(menuItems[i].longitude) - 1] = '\0';
+
+        strncpy(menuItems[i].battery, item.battery,
+                sizeof(menuItems[i].battery) - 1);
+        menuItems[i].battery[sizeof(menuItems[i].battery) - 1] = '\0';
+        break;
       }
     }
     if (idExist == 0) {
