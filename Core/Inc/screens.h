@@ -10,6 +10,7 @@ typedef struct {
   char longitude[12];
   char date[8];
   char magHeading[7];
+  char battery[6];
   unsigned char GPSaccquired; // this checks for the first successful gps fix
   unsigned char LORA_Txing;
 } SensorState;

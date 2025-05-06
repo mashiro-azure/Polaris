@@ -28,4 +28,6 @@ double calculate_relative_bearing(SensorState sensorState,
 
 float read_mag(char *buf, size_t buf_size, const stmdev_ctx_t *dev_ctx);
 
+void processLoRaPacket(uint8_t *loraRXBuffer, uint8_t packetLength);
+
 #endif

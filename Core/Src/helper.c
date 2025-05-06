@@ -256,4 +256,29 @@ float read_mag(char *buf, size_t buf_size, const stmdev_ctx_t *dev_ctx) {
     // HAL_UART_Transmit(&huart1, (uint8_t *)tx_buffer, strlen(tx_buffer),
     //                   HAL_MAX_DELAY);
   }
+  return 0.0f;
+}
+
+void processLoRaPacket(uint8_t *loraRXBuffer, uint8_t packetLength) {
+  char loraRXstring[42];
+  if (packetLength >= sizeof(loraRXstring))
+    packetLength = sizeof(loraRXstring) - 1;
+
+  memcpy(loraRXstring, loraRXBuffer, packetLength);
+  loraRXstring[packetLength] = '\0';
+
+  char header[6];
+  MenuItem item;
+
+  // Parse the contiguous comma-separated string.
+  // %5[^,] reads at most 5 characters for 'header',
+  // %4[^,] reads at most 4 characters for 'id',
+  // %11[^,] reads at most 11 for latitude and longitude,
+  // %4s reads up to 4 characters for battery.
+  int ret = sscanf(loraRXstring, "%5[^,],%4[^,],%11[^,],%11[^,],%4s", header,
+                   item.id, item.latitude, item.longitude, item.battery);
+
+  if (ret == 5 && strncmp(header, ">PLRS", 5) == 0) {
+    addMenuItem(item.id, item.latitude, item.longitude, item.battery);
+  }
 }
