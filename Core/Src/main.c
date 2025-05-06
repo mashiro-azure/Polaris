@@ -525,7 +525,8 @@ int main(void) {
         if (tempChar == '\n') {
           gpsBuffer[gpsBufferIndex] = '\0';
           // Only forward if it's a GPRMC sentence
-          if (strncmp(gpsBuffer, "$GPRMC", 6) == 0) {
+          if (strncmp(gpsBuffer, "$GPRMC", 6) == 0 ||
+              strncmp(gpsBuffer, "$GPGSV", 6) == 0) {
             HAL_UART_Transmit(&huart1, (uint8_t *)gpsBuffer, gpsBufferIndex,
                               HAL_MAX_DELAY); // DEBUG: GPS buffer
             strncpy(gpsLastSentence, gpsBuffer,

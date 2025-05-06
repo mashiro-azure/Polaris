@@ -279,6 +279,14 @@ void processLoRaPacket(uint8_t *loraRXBuffer, uint8_t packetLength) {
                    item.id, item.latitude, item.longitude, item.battery);
 
   if (ret == 5 && strncmp(header, ">PLRS", 5) == 0) {
-    addMenuItem(item.id, item.latitude, item.longitude, item.battery);
+    unsigned char idExist = 0;
+    for (int i = 0; i < menuItemCount; i++) {
+      if (strcmp(menuItems[i].id, item.id) == 0) {
+        idExist = 1;
+      }
+    }
+    if (idExist == 0) {
+      addMenuItem(item.id, item.latitude, item.longitude, item.battery);
+    }
   }
 }

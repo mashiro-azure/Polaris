@@ -33,6 +33,7 @@ typedef struct {
   char longitude[12];
   char battery[5];
 } MenuItem;
+extern MenuItem menuItems[MAX_MENU_ITEMS];
 
 void addMenuItem(const char *id, const char *latitude, const char *longitude,
                  const char *battery);
