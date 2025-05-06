@@ -56,6 +56,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/helper.c
     Core/Src/screens.c
     Drivers/lis3mdl/lis3mdl_reg.c
+    Drivers/lora/lora_sx1276.c
     ${U8G2_SOURCES}
 )
 
@@ -64,6 +65,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     Drivers/u8g2/
     Drivers/lis3mdl/
+    Drivers/lora/
 )
 
 # Add project symbols (macros)
