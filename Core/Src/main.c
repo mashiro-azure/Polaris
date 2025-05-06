@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "helper.h"
+#include "lis3mdl_reg.h"
 #include "screens.h"
 #include "stm32f103xe.h"
 #include "stm32f1xx_hal.h"
@@ -29,6 +30,7 @@
 #include "stm32f1xx_hal_tim.h"
 #include "u8g2.h"
 #include "u8x8.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 /* USER CODE END Includes */
@@ -264,6 +266,25 @@ void navigateMenu(int direction) {
   }
 }
 
+static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,
+                              uint16_t len) {
+  if (HAL_I2C_Mem_Write((I2C_HandleTypeDef *)handle, LIS3MDL_I2C_ADD_H, reg,
+                        I2C_MEMADD_SIZE_8BIT, (uint8_t *)bufp, len,
+                        1000) == HAL_OK)
+    return 0;
+  else
+    return -1;
+}
+
+static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
+                             uint16_t len) {
+  if (HAL_I2C_Mem_Read((I2C_HandleTypeDef *)handle, LIS3MDL_I2C_ADD_H, reg,
+                       I2C_MEMADD_SIZE_8BIT, bufp, len, 1000) == HAL_OK)
+    return 0;
+  else
+    return -1;
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -324,6 +345,30 @@ int main(void) {
   addMenuItem("1a2b", "22.321542", "113.943357", "100%%");
   addMenuItem("1a2b", "22.321542", "113.943357", "100%%");
   addMenuItem("1a2b", "22.321542", "113.943357", "100%%");
+
+  // Mag
+  stmdev_ctx_t dev_ctx;
+  dev_ctx.write_reg = platform_write;
+  dev_ctx.read_reg = platform_read;
+  dev_ctx.handle = &hi2c1;
+
+  uint8_t whoamI;
+  lis3mdl_device_id_get(&dev_ctx, &whoamI);
+  if (whoamI != LIS3MDL_ID) {
+    Error_Handler();
+  }
+
+  lis3mdl_reset_set(&dev_ctx, PROPERTY_ENABLE);
+  uint8_t rst;
+  do {
+    lis3mdl_reset_get(&dev_ctx, &rst);
+  } while (rst);
+
+  lis3mdl_block_data_update_set(&dev_ctx, PROPERTY_ENABLE);
+  lis3mdl_data_rate_set(&dev_ctx, LIS3MDL_LP_1kHz);
+  lis3mdl_full_scale_set(&dev_ctx, LIS3MDL_4_GAUSS);
+  lis3mdl_operating_mode_set(&dev_ctx, LIS3MDL_CONTINUOUS_MODE);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -468,6 +513,10 @@ int main(void) {
       Magnetometer
     */
     if (currentScreen == SCREEN_TRACK) {
+      char mag_buf[128] = {0};
+      float magHeading = read_mag(mag_buf, sizeof(mag_buf), &dev_ctx);
+      snprintf(sensorState.magHeading, sizeof(sensorState.magHeading), "%.2f",
+               magHeading);
       // TODO: calculate heading and store into sensorState.magHeading,
       // screen_draw should automatically get the value and calculate the
       // relative bearing.

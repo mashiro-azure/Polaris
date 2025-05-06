@@ -1,4 +1,5 @@
 #include "helper.h"
+#include "lis3mdl_reg.h"
 #include "math.h"
 #include "screens.h"
 #include "stm32f1xx_hal.h"
@@ -126,4 +127,133 @@ double calculate_relative_bearing(SensorState sensorState,
                                   const double targetBearing) {
   double relative_bearing = targetBearing - atof(sensorState.magHeading);
   return relative_bearing;
+}
+
+float read_mag(char *buf, size_t buf_size, const stmdev_ctx_t *dev_ctx) {
+  float offsetX = 0, offsetY = 0, offsetZ = 0;
+  float xmin = 99999, xmax = -99999;
+  float ymin = 99999, ymax = -99999;
+  float zmin = 99999, zmax = -99999;
+
+  float last_magX = 0.0f;
+  float last_magY = 0.0f;
+  float last_magZ = 0.0f;
+
+  int sample_count = 0;
+
+  // Soft iron scale factor
+  float scaleX = 1.0f, scaleY = 1.0f, scaleZ = 1.0f;
+  static float angle_smooth = 0.0f;
+
+  lis3mdl_status_reg_t status;
+  lis3mdl_status_get(dev_ctx, &status);
+  if (status.zyxda) {
+    int16_t data_raw_magnetic[3];
+    float magnetic_mG[3];
+
+    memset(data_raw_magnetic, 0x00, 3 * sizeof(int16_t));
+    lis3mdl_magnetic_raw_get(dev_ctx, data_raw_magnetic);
+
+    magnetic_mG[0] = lis3mdl_from_fs4_to_gauss(data_raw_magnetic[0]) * 1000.0f;
+    magnetic_mG[1] = lis3mdl_from_fs4_to_gauss(data_raw_magnetic[1]) * 1000.0f;
+    magnetic_mG[2] = lis3mdl_from_fs4_to_gauss(data_raw_magnetic[2]) * 1000.0f;
+
+    // 1️⃣ 更新 max/min
+    if (magnetic_mG[0] > xmax)
+      xmax = magnetic_mG[0];
+    if (magnetic_mG[0] < xmin)
+      xmin = magnetic_mG[0];
+    if (magnetic_mG[1] > ymax)
+      ymax = magnetic_mG[1];
+    if (magnetic_mG[1] < ymin)
+      ymin = magnetic_mG[1];
+    if (magnetic_mG[2] > zmax)
+      zmax = magnetic_mG[2];
+    if (magnetic_mG[2] < zmin)
+      zmin = magnetic_mG[2];
+
+    sample_count++;
+
+    // 2️⃣ 每 100 次 sample 計 offset 和 scale（Hard + Soft Iron）
+    if (sample_count >= 100) {
+      offsetX = (xmax + xmin) / 2.0f;
+      offsetY = (ymax + ymin) / 2.0f;
+      offsetZ = (zmax + zmin) / 2.0f;
+
+      float x_range = xmax - xmin;
+      float y_range = ymax - ymin;
+      float z_range = zmax - zmin;
+
+      // 平均半徑
+      float avg_range = (x_range + y_range + z_range) / 3.0f;
+
+      scaleX = (x_range > 0) ? (x_range / avg_range) : 1.0f;
+      scaleY = (y_range > 0) ? (y_range / avg_range) : 1.0f;
+      scaleZ = (z_range > 0) ? (z_range / avg_range) : 1.0f;
+
+      // 重設
+      xmax = -99999;
+      xmin = 99999;
+      ymax = -99999;
+      ymin = 99999;
+      zmax = -99999;
+      zmin = 99999;
+      sample_count = 0;
+    }
+
+    // 3️⃣ 減 offset（Hard Iron）
+    magnetic_mG[0] -= offsetX;
+    magnetic_mG[1] -= offsetY;
+    magnetic_mG[2] -= offsetZ;
+
+    // 4️⃣ 除 scale（Soft Iron）
+    magnetic_mG[0] /= scaleX;
+    magnetic_mG[1] /= scaleY;
+    magnetic_mG[2] /= scaleZ;
+
+    // 5️⃣ 計算磁場變化 magnitude（√(Δx^2 + Δy^2 + Δz^2)）
+    float deltaX = magnetic_mG[0] - last_magX;
+    float deltaY = magnetic_mG[1] - last_magY;
+    float deltaZ = magnetic_mG[2] - last_magZ;
+
+    float delta_magnitude =
+        sqrtf(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+
+    // 如果變化細過 threshold，skip angle 計算
+    if (delta_magnitude < MAG_THRESHOLD) {
+      return angle_smooth; // 唔做 angle 更新
+    }
+
+    // 5️⃣ 計 angle
+    // 把 X/Y 顛倒，或者根據 LIS3MDL 放置方式調整
+    float angle = atan2f(-magnetic_mG[0], magnetic_mG[1]) * 180.0f / M_PI;
+    angle += 3.3f; // 你的 declination 修正
+    if (angle < 0.0f)
+      angle += 360.0f;
+
+    // 計算 XY 強度
+    float xy_strength = sqrtf(magnetic_mG[0] * magnetic_mG[0] +
+                              magnetic_mG[1] * magnetic_mG[1]);
+    if (xy_strength < 200.0f) {
+      return angle_smooth; // 如果磁場太弱，唔更新 angle
+    }
+
+    // 平滑 angle（EMA）
+    float alpha = 0.1f; // 濾波系數，可調整
+    angle_smooth = alpha * angle + (1 - alpha) * angle_smooth;
+
+    // 更新 last_magX/Y/Z
+    last_magX = magnetic_mG[0];
+    last_magY = magnetic_mG[1];
+    last_magZ = magnetic_mG[2];
+
+    // 6️⃣ Print
+    snprintf(buf, buf_size,
+             "Mag: X = %.2f, Y = %.2f, Z = %.2f, Angle: %.2f\r\n",
+             magnetic_mG[0] / 1000.0f, magnetic_mG[1] / 1000.0f,
+             magnetic_mG[2] / 1000.0f, angle_smooth);
+    return angle_smooth;
+    // HAL_UART_Transmit(&huart1, (uint8_t *)tx_buffer, strlen(tx_buffer),
+    //                   HAL_MAX_DELAY);
+  }
 }
