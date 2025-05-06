@@ -121,3 +121,9 @@ DistanceBearing calculate_distance_and_bearing(SensorState sensorState,
   }
   return result;
 }
+
+double calculate_relative_bearing(SensorState sensorState,
+                                  const double targetBearing) {
+  double relative_bearing = targetBearing - atof(sensorState.magHeading);
+  return relative_bearing;
+}

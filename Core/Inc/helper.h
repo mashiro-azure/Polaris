@@ -20,5 +20,7 @@ void convert_rawGPS_to_dd_format(SensorState *sensorState, const char *rawLat,
 DistanceBearing calculate_distance_and_bearing(SensorState sensorState,
                                                const char *targetLatitude,
                                                const char *targetLongitude);
+double calculate_relative_bearing(SensorState sensorState,
+                                  const double targetBearing);
 
 #endif
