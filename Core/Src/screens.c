@@ -281,8 +281,9 @@ void screen_draw(u8g2_t *oled, ScreenState screen, SensorState sensors,
     u8g2_DrawStr(oled, 0,
                  u8g2_GetDisplayHeight(oled) + u8g2_GetFontDescent(oled), buf);
     u8g2_DrawLine(oled, 0, 14, u8g2_GetStrWidth(oled, selectedItem.id), 14);
+    double relative_bearing = calculate_relative_bearing(sensors, db.bearing);
     draw_heading_arrow(oled, u8g2_GetDisplayWidth(oled) - 24,
-                       u8g2_GetDisplayHeight(oled) / 2, db.bearing);
+                       u8g2_GetDisplayHeight(oled) / 2, relative_bearing);
     draw_battery_box(oled, 1.0);
     break;
 

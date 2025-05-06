@@ -465,6 +465,18 @@ int main(void) {
     //
 
     /*
+      Magnetometer
+    */
+    if (currentScreen == SCREEN_TRACK) {
+      // TODO: calculate heading and store into sensorState.magHeading,
+      // screen_draw should automatically get the value and calculate the
+      // relative bearing.
+    }
+    /*
+      End: Magnetometer
+    */
+
+    /*
         Screen Refresh
     */
     if (powersave == 0) {
