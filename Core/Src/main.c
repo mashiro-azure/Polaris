@@ -595,7 +595,8 @@ int main(void) {
       if (packetLength > 0 && RXerror == LORA_OK) {
         processLoRaPacket(loraRXBuffer, packetLength);
         HAL_UART_Transmit(&huart1, (uint8_t *)loraRXBuffer,
-                          strlen(loraRXBuffer), HAL_MAX_DELAY);
+                          (uint16_t)strlen((char *)loraRXBuffer),
+                          HAL_MAX_DELAY);
       }
     }
     /*
